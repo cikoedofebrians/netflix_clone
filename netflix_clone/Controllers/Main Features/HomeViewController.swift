@@ -6,11 +6,13 @@
 //
 
 import UIKit
+import CryptoKit
+
 
 class HomeViewController: UIViewController {
     
     
-    
+    private var headerView: HeroHeaderUIView?
     let sectionList: [String] = ["Trending Movies",  "Trending Tv", "Popular","Upcoming Movies", "Top Rated"]
     let homeTable: UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
@@ -23,10 +25,10 @@ class HomeViewController: UIViewController {
         view.backgroundColor = .systemBackground
         homeTable.delegate = self
         homeTable.dataSource = self
-        let headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
-        homeTable.tableHeaderView = headerView
         view.addSubview(homeTable)
         configureNavbar()
+        headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
+        homeTable.tableHeaderView = headerView
     }
     
     override func viewDidLayoutSubviews() {
@@ -45,20 +47,7 @@ class HomeViewController: UIViewController {
         ]
         
         
-        
-        
     }
-    
-//    private func getTrendingMovies(){
-//        APICaller.shared.getPopularMovies { results in
-//            switch results {
-//            case .success(let movies):
-//                print(movies)
-//            case .failure(let error):
-//                print(error)
-//            }
-//        }
-//    }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let defaultOffset = view.safeAreaInsets.top
@@ -82,12 +71,16 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: CollectionViewTableViewCell.identifier, for: indexPath) as? CollectionViewTableViewCell else {
             return UITableViewCell()
         }
-        
+        cell.delegate = self
         switch indexPath.section {
         case Sections.TrendingMovies.rawValue:
             APICaller.shared.getTrendingMovies { result in
                 switch result {
                 case .success(let result):
+                    guard let randomElementImageURL = result.randomElement()?.poster_path else {
+                        return
+                    }
+                    self.headerView?.configure(with: randomElementImageURL)
                     cell.configure(with: result)
                 case .failure(let error):
                     print(error.localizedDescription)
@@ -151,6 +144,25 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 40
+    }
+}
+
+
+extension String {
+    func md5() -> String {
+        Insecure.MD5.hash(data: self.data(using: .utf8)!).map { String(format: "%02hhx", $0) }.joined()
+    }
+}
+
+
+extension HomeViewController: CollectionViewTableViewCellDelegate {
+    func collectionViewTableViewCellDidTapped(_ cell: CollectionViewTableViewCell, viewModel: TitlePreviewViewModel) {
+        DispatchQueue.main.async {
+            let vc = TitlePreviewViewController()
+            vc.configure(with: viewModel)
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
+     
     }
 }
 

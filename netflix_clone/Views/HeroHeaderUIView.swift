@@ -13,8 +13,6 @@ class HeroHeaderUIView: UIView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-
-        imageView.image = UIImage(named: "heroImage")
         return imageView
     }()
     
@@ -80,5 +78,11 @@ class HeroHeaderUIView: UIView {
     
     override func layoutSubviews() {
         imageView.frame = bounds
+    }
+    
+    public func configure(with imageURL: String){
+        let rawUrl = "\(Constant.imageBaseUrl)/t/p/w500\(imageURL)?api_key=\(Constant.tmdbAPIKey)"
+        guard let url = URL(string: rawUrl) else {return}
+        imageView.sd_setImage(with: url)
     }
 }
